@@ -1,0 +1,99 @@
+<html>
+<head><title>Firefox video playback statistics</title></head>
+<body>
+<video src="https://www.w3schools.com/Html/mov_bbb.mp4" id="v" controls autoplay></video>
+<div id="log">
+Parsed frames: 0 average p/s: 0<br>
+Decoded frames: 0 average p/s: 0<br>
+Presented frames: 0 average p/s: 0<br>
+Painted frames: 0 average p/s: 0<br>
+Average paint delay: 0s
+</div>
+<script>
+
+var decodedFrames = 0;
+var parsedFrames = 0;
+var paintedFrameCount = 0;
+var presentedFrames = 0;
+var paintedFrames = 0;
+var delaySum = 0;
+var delayCount = 0;
+var decodedPerSec = 0;
+var parsedPerSec = 0;
+var presentedPerSec = 0;
+var paintedPerSec = 0;
+
+function Mean() {
+  this.count = 0;
+  this.sum = 0;
+  
+  this.record = function(val) {
+    this.count++;
+    this.sum += val;
+  };
+  
+  this.mean = function() {
+    return this.count ? (this.sum / this.count).toFixed(3) : 0;
+  };
+}
+
+var delayMean = new Mean();
+var parpsMean = new Mean();
+var dedpsMean = new Mean();
+var prepsMean = new Mean();
+var pntpsMean = new Mean();
+
+
+function updateFrameDelayMean() {
+  var v = document.getElementById("v");
+
+  if (v.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA || v.paused) {
+    return;
+  }
+   
+  var delay = v.mozFrameDelay;
+  if (v.mozPaintedFrames != paintedFrameCount) {
+    delayMean.record(delay);
+    paintedFrameCount = v.mozPaintedFrames;
+  }
+}
+
+function recalcRates() {
+  var v = document.getElementById("v");
+
+  if (v.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA || v.paused) {
+    return;
+  }
+
+  decodedPerSec = (v.mozDecodedFrames - decodedFrames);
+  decodedFrames = v.mozDecodedFrames;
+  
+  parsedPerSec = v.mozParsedFrames - parsedFrames;
+  parsedFrames = v.mozParsedFrames;
+  
+  presentedPerSec = v.mozPresentedFrames - presentedFrames;
+  presentedFrames = v.mozPresentedFrames;
+  
+  paintedPerSec = v.mozPaintedFrames - paintedFrames;
+  paintedFrames = v.mozPaintedFrames;
+  
+  parpsMean.record(parsedPerSec);
+  dedpsMean.record(decodedPerSec);
+  prepsMean.record(presentedPerSec);
+  pntpsMean.record(paintedPerSec);
+  
+  var d = document.getElementById("log");
+  d.innerHTML =
+    "Parsed frames: " + v.mozParsedFrames + " average p/s: " + parpsMean.mean() + "<br>" +
+    "Decoded frames: " + v.mozDecodedFrames + " average p/s: " + dedpsMean.mean() + "<br>" +
+    "Presented frames: " + v.mozPresentedFrames + " average p/s: " + prepsMean.mean() + "<br>" +
+    "Painted frames: " + v.mozPaintedFrames + " average p/s: " + pntpsMean.mean() + "<br>" +
+    "Average paint delay: " + delayMean.mean() + "s";
+}
+
+setInterval(recalcRates, 1000);
+setInterval(updateFrameDelayMean, 40);
+
+</script>
+</body>
+</html>
